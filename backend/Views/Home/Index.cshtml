@@ -11,7 +11,6 @@
 
 
 <div class="index">
-
     @await Html.PartialAsync("_Navbar")
     <div class="panel" id="about">
         @await Html.PartialAsync("_About")
@@ -24,7 +23,7 @@
     @await Html.PartialAsync("_Footer")
 </div>
 
-<script>
+@* <script>
   document.addEventListener('click', function (e) {
     const btn = e.target.closest('.nav-selection-option[aria-selected]');
     if (!btn) return;
@@ -40,4 +39,4 @@
     // Show clicked panel
     document.getElementsByClassName("panel")[targetId].classList.remove('hidden')
   });
-</script>
+</script> *@

@@ -1,11 +1,13 @@
 .nav-container {
+  width: 100%;
+  height: 100%;
   font-family: 'Inter', sans-serif;
-  background-color: red;
 }
 
 .nav-header {
   width: 100%;
-  padding: 3%;
+  padding-top: 3%;
+  padding-bottom: 3%;
   text-align: center;
   font-size: 3em;
   font-weight: bold;
@@ -20,7 +22,7 @@
 .nav-selection-container {
   display: flex;
   flex-direction: row;
-  background-color: #b4ecff;;
+  background-color: #b4ecff;
 }
 
 .nav-selection-option {

@@ -13,6 +13,11 @@
     grid-column-end: 3;
 }
 
+.contact a {
+    text-decoration: none;
+    color: black;
+}
+
 .socials-icons {
     width: 100%;
     grid-column-start: 4;
@@ -43,7 +48,7 @@
 }
 
 .resume-icon:hover {
-    background-color: #73d3ff;;
+    background-color: #73d3ff;
 }
 
 .github-icon {
@@ -53,6 +58,13 @@
     display: flex;
     align-items: center;
     justify-self: center;
+    background-color: transparent;
+    transition: background-color 0.5s;
+    border-radius: 10px;
+}
+
+.github-icon:hover {
+    background-color: #73d3ff;
 }
 
 .linkedin-icon {
@@ -62,4 +74,11 @@
     display: flex;
     align-items: center;
     justify-self: center;
+    background-color: transparent;
+    transition: background-color 0.5s;
+    border-radius: 10px;
+}
+
+.linkedin-icon:hover {
+    background-color: #73d3ff;
 }
