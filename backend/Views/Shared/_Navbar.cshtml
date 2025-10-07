@@ -1,0 +1,29 @@
+<link rel="stylesheet" href="~/css/_Navbar.css" />
+
+<div class="nav-container">
+    <div class="nav-header">
+      <a href="/">
+          Junming Qiu
+      </a>
+    </div>
+    <div class="nav-selection-container">
+        <div class="nav-selection-option" id="about" aria-selected="true">
+            About Me
+            <div class="nav-selection-indicator"></div>
+        </div>
+        <a class="nav-selection-option" id="blog" href="https://smoggy-maxilla-6b3.notion.site/ebd/2852c3cda2ba80e899dff596ce29dc49?v=2852c3cda2ba809da7cc000c131f1add">
+            Blog
+            <div class="nav-selection-indicator"></div>
+        </a>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.nav-selection-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('.nav-selection-option')
+      .forEach(o => o.setAttribute('aria-selected', 'false'));
+    opt.setAttribute('aria-selected', 'true');
+  });
+});
+</script>

@@ -1,0 +1,5 @@
+<form hx-post="/Users/Create" hx-target="#list" hx-swap="outerHTML">
+    <input name="name" placeholder="New user" />
+    <button type="submit">Add</button>
+    @Html.AntiForgeryToken()
+</form>

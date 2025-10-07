@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - Junming Qiu's Personal Site</title>
+    <link rel="icon" href="~/content/favicon.ico"/>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    @* Antiforgery token for HTMX *@
+    @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+    @{
+        var token = Xsrf.GetAndStoreTokens(Context).RequestToken;
+    }
+    <meta name="request-verification-token" content="@token" />
+    <script>
+      document.body?.addEventListener('htmx:configRequest', (e) => {
+        const t = document.querySelector('meta[name="request-verification-token"]')?.content;
+        if (t) e.detail.headers['RequestVerificationToken'] = t;
+      });
+    </script>
+</head>
+<body>
+    @RenderBody()
+</body>
+</html>

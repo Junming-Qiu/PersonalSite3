@@ -1,0 +1,65 @@
+.footer {
+    background-color: #d0efff;
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    display: grid;
+    grid-template-columns: 5% 20% 40% 30% 5%;
+}
+
+.contact {
+    width: 100%;
+    padding: 10%;
+    grid-column-start: 2;
+    grid-column-end: 3;
+}
+
+.socials-icons {
+    width: 100%;
+    grid-column-start: 4;
+    grid-column-end: 5;
+    display: grid;
+    grid-template-columns: 33% 34% 33%;
+    margin: 10%;
+}
+
+.resume-icon {
+    background-color: black;
+    height: 45px;
+    padding: 5%;
+    padding-left: 10%;
+    padding-right: 10%;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    border-radius: 10px;
+    color: whitesmoke;
+    grid-column-start: 1;
+    grid-column-end: 2;
+    justify-self: center;
+    align-self: center;
+    transition: background-color 0.5s;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.resume-icon:hover {
+    background-color: #73d3ff;;
+}
+
+.github-icon {
+    width: 45px;
+    grid-column-start: 2;
+    grid-column-end: 3;
+    display: flex;
+    align-items: center;
+    justify-self: center;
+}
+
+.linkedin-icon {
+    width: 45px;
+    grid-column-start: 3;
+    grid-column-end: 4;
+    display: flex;
+    align-items: center;
+    justify-self: center;
+}

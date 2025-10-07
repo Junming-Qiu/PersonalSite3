@@ -1,0 +1,57 @@
+.nav-container {
+  font-family: 'Inter', sans-serif;
+  background-color: red;
+}
+
+.nav-header {
+  width: 100%;
+  padding: 3%;
+  text-align: center;
+  font-size: 3em;
+  font-weight: bold;
+  background-color: #d0efff;
+}
+
+.nav-header a {
+  text-decoration: none;
+  color: black;
+}
+
+.nav-selection-container {
+  display: flex;
+  flex-direction: row;
+  background-color: #b4ecff;;
+}
+
+.nav-selection-option {
+  padding: 1.5%;
+  padding-bottom: 0;
+  text-align: center;
+  font-size: 1em;
+  width: 50%;
+  display: grid;
+  grid-template-rows: 80% 20%;
+  background-color: inherit;
+  transition: background-color 0.1s;
+  cursor: pointer;
+  text-decoration: none;
+  color: black;
+}
+
+.nav-selection-option:hover {
+  background-color: #73d3ff;
+}
+
+.nav-selection-indicator {
+  justify-self: center;
+  width: 30%;
+  height: 15px;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 4px solid black;
+  visibility: hidden;
+}
+
+.nav-selection-option[aria-selected="true"] .nav-selection-indicator {
+  visibility: visible;
+}

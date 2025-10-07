@@ -1,0 +1,33 @@
+[
+    {
+        "name" : "AI Video Generation and Editing Pipeline",
+        "where" : "",
+        "desc" : "Automated creation and video editing of AI TikTok videos. Received ~50k views in three weeks.",
+        "when" : "Jan 2024",
+        "link" : "https://github.com/Helen-Group/content-generation-v2-final"
+    },
+
+    {
+        "name" : "Youtubify - Terminal Based Music Streamer",
+        "where" : "",
+        "desc" :  "Python-based app which streams audio from Youtube videos using the Youtube API. Features include auto play, search song by keyword, modular playlist system. Built using Python and command line tools.",
+        "when" : "Summer 2021",
+        "link" : "https://github.com/Junming-Qiu/Youtubify"
+    },
+
+    {
+        "name" : "CliqueIO - Collaborative Platform for Students",
+        "where" : "",
+        "desc" : "CliqueIO provides an efficient and easy way to quickly get their ideas out in the open. Built using Python Django, PostgreSQL, Redis, HTML/CSS, Javascript. Features include: creating posts, applying to groups, customizable user profile, viewing and accepting applicants, filtering using keywords, live chat rooms, notifications, friends.",
+        "when" : "Summer 2020",
+        "link" : "https://github.com/Junming-Qiu/CliqueIOFinal"
+    },
+
+    {
+        "name" : "Location of Objects using Apriltags",
+        "where" : "",
+        "desc" : "This project was built for the Robotic Design Team at NYU and its purpose was to obtain the location and orientation of a robot using only a standard camera and Apriltags. Created using Apriltag library, OpenCV, and Python. Tracks location and orientation of robot to 95% accuracy.",
+        "when" : "Fall 2019",
+        "link" : "https://github.com/nyu-rdt/RMC20/blob/master/nuc_code/src/rdt_localization/src/aptag_optimized.py"
+    }
+]

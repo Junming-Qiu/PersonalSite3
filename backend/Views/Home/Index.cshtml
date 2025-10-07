@@ -1,0 +1,43 @@
+@{
+    ViewData["Title"] = "Home";
+    Layout = "_Layout";
+}
+
+<link rel="stylesheet" href="~/css/Home.Index.css" />
+
+<style>
+  .hidden { display:none; }
+</style>
+
+
+<div class="index">
+
+    @await Html.PartialAsync("_Navbar")
+    <div class="panel" id="about">
+        @await Html.PartialAsync("_About")
+    </div>
+
+    <div class="panel hidden" id="blog">
+      <h1>Launching Blog...</h1>
+    </div>
+    
+    @await Html.PartialAsync("_Footer")
+</div>
+
+<script>
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.nav-selection-option[aria-selected]');
+    if (!btn) return;
+
+    const targetId = btn.id;
+    if (!targetId) return;
+    console.log(targetId)
+
+    // Hide all panels
+    document.querySelectorAll('.panel').forEach(el => el.classList.add('hidden'));
+
+    console.log(document.getElementsByClassName("panel"))
+    // Show clicked panel
+    document.getElementsByClassName("panel")[targetId].classList.remove('hidden')
+  });
+</script>

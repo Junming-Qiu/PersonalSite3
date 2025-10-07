@@ -1,0 +1,56 @@
+@model List<dynamic>
+
+<link rel="stylesheet" href="~/css/_About.css" />
+
+<div class="about">
+  <div class="about-skills">
+    <div class="about-skills-pic">
+      <img style="border-radius: 5%; width: inherit;" src="~/content/profile.jpeg"/>
+    </div>
+    <div class="about-skills-content">
+      <div class="about-quote">
+        <b>I am a software engineer</b> with expertise in scalable backend systems and cloud infrastructure. Track record of delivering projects end-to-end in fast-paced, cross-functional teams.
+      </div>
+      <div class="about-skills-content-skillboxes">
+        <div class="skillbox-text"><b>I am skilled in: </b></div>
+        <div class="skillbox">Python</div>
+        <div class="skillbox">C++</div>
+        <div class="skillbox">ElasticSearch</div>
+        <div class="skillbox">SQL</div>
+        <div class="skillbox">C#</div>
+        <div class="skillbox">AWS</div>
+        <div class="skillbox">Java</div>
+        <div class="skillbox">Prometheus</div>
+        <div class="skillbox">Terraform</div>
+      </div>
+      <div class="about-skills-content-description">
+        <h3><b>With experience in:</b></h3>
+        <h2>Large Scale Data Processing</h2>
+        <p>Providing real time searching and alerting on financial news documents.</p>
+        <h2>Retrieval Augmented Generation</h2>
+        <p>Creating LLM-powered chatbots and retrieval augmented generation pipelines.</p>
+        <h2>Cloud Infrastructure</h2>
+        <p>AWS Cloud Architect certified. Providing custom solutions on the cloud, and integrations with on-premises infrastructure.</p>
+        <h2>Observability</h2>
+        <p>Building custom observability platforms and interfaces, improving insight into existing applications.</p>
+        <h2>Full Stack Engineering</h2>
+        <p>Designing and implementing end to end scalable and distributed solutions using modern tech stacks</p>
+      </div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="projects">
+    <div class="content-header">Projects</div>
+    <div class="projects-grid">
+      @foreach (var o in Model) {
+        <a class="projects-grid-item" href="@o.link">
+          <div class="projects-grid-item-contents">
+            <div class="projects-grid-item-contents-name">@o.name</div>
+            <div class="projects-grid-item-contents-when">@o.when</div>
+            <div class="projects-grid-item-contents-desc">@o.desc</div>
+          </div>
+        </a>
+      }
+    </div>
+  </div>
+</div>
