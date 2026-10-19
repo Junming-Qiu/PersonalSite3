@@ -35,8 +35,6 @@ builder.Services.AddOpenApiDocument(config =>
     config.Version = VERSION;
 });
 
-builder.Services.AddSingleton<IGithubPoller>(new GithubPoller());
-
 var app = builder.Build();
 
 app.UseHttpLogging();
