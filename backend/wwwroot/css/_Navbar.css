@@ -27,12 +27,11 @@
 
 .nav-selection-option {
   padding: 1.5%;
-  padding-bottom: 0;
+  padding-bottom: 0%;
   text-align: center;
   font-size: 1em;
   width: 50%;
   display: grid;
-  grid-template-rows: 80% 20%;
   background-color: inherit;
   transition: background-color 0.1s;
   cursor: pointer;
@@ -47,10 +46,10 @@
 .nav-selection-indicator {
   justify-self: center;
   width: 30%;
-  height: 15px;
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
   border-bottom: 4px solid black;
+  padding-top: 15px;
   visibility: hidden;
 }
 
