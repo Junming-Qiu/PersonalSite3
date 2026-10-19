@@ -1,0 +1,54 @@
+@{
+    ViewData["Title"] = "Gallery";
+    Layout = "_Layout";
+}
+
+@section Head {
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="~/css/Gallery.Index.css" />
+}
+
+@await Html.PartialAsync("_Navbar")
+
+<div class="gallery-wrap">
+    <div class="gallery-main">
+        <div class="by-toggle toolbar" role="group" aria-label="Group frames by">
+            <button type="button" data-by="month" aria-pressed="true">Month</button>
+            <button type="button" data-by="location" aria-pressed="false">Location</button>
+        </div>
+        <div id="sheet" aria-live="polite"></div>
+    </div>
+
+    <nav class="rail" aria-label="Sections">
+        <div class="by-toggle" role="group" aria-label="Group frames by">
+            <button type="button" data-by="month" aria-pressed="true">Month</button>
+            <button type="button" data-by="location" aria-pressed="false">Location</button>
+        </div>
+        <ul id="rail-list" class="rail-list"></ul>
+    </nav>
+</div>
+
+<div id="pop" class="pop" role="dialog" aria-modal="true" aria-label="Frame" hidden>
+    <button type="button" class="pop-x" aria-label="Close">&#x2715;</button>
+    <button type="button" class="pop-nav pop-prev" aria-label="Previous frame">&#x2039;</button>
+    <button type="button" class="pop-nav pop-next" aria-label="Next frame">&#x203A;</button>
+    <figure class="pop-frame">
+        <div class="pop-top">
+            <p class="pop-meta"></p>
+            <p class="pop-film"></p>
+        </div>
+        <img id="pop-img" alt="" />
+        <figcaption class="pop-info">
+            <div class="pop-head">
+                <p class="pop-meta"></p>
+                <p class="pop-film"></p>
+            </div>
+            <p class="pop-desc"></p>
+        </figcaption>
+    </figure>
+    <div class="reel">
+        <div class="reel-strip"><div class="reel-film" id="reel-film"></div></div>
+    </div>
+</div>
+
+<script type="module" src="~/js/gallery.js"></script>

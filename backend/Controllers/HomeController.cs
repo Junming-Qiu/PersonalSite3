@@ -17,7 +17,6 @@ public class HomeController : Controller
     }
     public IActionResult Index()
     {
-        // var repos = await poller.GetRepositories();
         return View(experiences);
     }
 

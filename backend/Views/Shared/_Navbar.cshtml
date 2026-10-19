@@ -1,29 +1,27 @@
+@{
+    var page = (string?)ViewContext.RouteData.Values["controller"];
+    string Selected(string controller) => (page == controller).ToString().ToLower();
+}
 <link rel="stylesheet" href="~/css/_Navbar.css" />
 
-<div class="nav-container">
+<div class="nav-container@(page == "Gallery" ? " scheme-gallery" : "")">
     <div class="nav-header">
       <a href="/">
           Junming Qiu
       </a>
     </div>
     <div class="nav-selection-container">
-        <div class="nav-selection-option" id="about" aria-selected="true">
+        <a class="nav-selection-option" id="about" href="/" aria-selected="@Selected("Home")">
             About Me
             <div class="nav-selection-indicator"></div>
-        </div>
+        </a>
+        <a class="nav-selection-option" id="gallery" href="/gallery" aria-selected="@Selected("Gallery")">
+            Gallery
+            <div class="nav-selection-indicator"></div>
+        </a>
         <a class="nav-selection-option" id="blog" href="https://junming-blog.notion.site/2852c3cda2ba80e899dff596ce29dc49?v=2852c3cda2ba809da7cc000c131f1add">
             Blog
             <div class="nav-selection-indicator"></div>
         </a>
     </div>
 </div>
-
-<script>
-document.querySelectorAll('.nav-selection-option').forEach(opt => {
-  opt.addEventListener('click', () => {
-    document.querySelectorAll('.nav-selection-option')
-      .forEach(o => o.setAttribute('aria-selected', 'false'));
-    opt.setAttribute('aria-selected', 'true');
-  });
-});
-</script>

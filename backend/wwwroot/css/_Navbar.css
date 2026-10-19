@@ -1,4 +1,7 @@
 .nav-container {
+  --nav-head: #d0efff;
+  --nav-bar: #b4ecff;
+  --nav-hover: #73d3ff;
   width: 100%;
   height: 100%;
   font-family: 'Inter', sans-serif;
@@ -11,7 +14,7 @@
   text-align: center;
   font-size: 3em;
   font-weight: bold;
-  background-color: #d0efff;
+  background-color: var(--nav-head);
 }
 
 .nav-header a {
@@ -22,7 +25,7 @@
 .nav-selection-container {
   display: flex;
   flex-direction: row;
-  background-color: #b4ecff;
+  background-color: var(--nav-bar);
 }
 
 .nav-selection-option {
@@ -30,7 +33,7 @@
   padding-bottom: 0%;
   text-align: center;
   font-size: 1em;
-  width: 50%;
+  flex: 1;
   display: grid;
   background-color: inherit;
   transition: background-color 0.1s;
@@ -40,7 +43,7 @@
 }
 
 .nav-selection-option:hover {
-  background-color: #73d3ff;
+  background-color: var(--nav-hover);
 }
 
 .nav-selection-indicator {
@@ -55,4 +58,11 @@
 
 .nav-selection-option[aria-selected="true"] .nav-selection-indicator {
   visibility: visible;
+}
+
+/* gallery scheme: header and tab bar share one grey */
+.nav-container.scheme-gallery {
+  --nav-head: #cbcbcf;
+  --nav-bar: #cbcbcf;
+  --nav-hover: #b9b9be;
 }
