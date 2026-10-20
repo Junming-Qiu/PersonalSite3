@@ -1,0 +1,204 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Gallery Editor</title>
+<style>
+  body { margin: 0; font: 14px system-ui; display: flex; height: 100vh; background: #1b1b1d; color: #ddd; }
+  #grid { flex: 1; overflow: auto; padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, 180px); gap: 8px; align-content: start; }
+  .f { position: relative; border: 3px solid transparent; cursor: pointer; }
+  .f.sel { border-color: #d9a441; }
+  .f.need::after { content: '!'; position: absolute; top: 4px; right: 4px; background: #d9a441; color: #000; width: 18px; text-align: center; border-radius: 9px; font-weight: bold; }
+  .f input { position: absolute; top: 6px; left: 6px; width: 20px; height: 20px; cursor: pointer; accent-color: #d9a441; }
+  #toast { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 20px); background: #d9a441; color: #000; padding: 10px 18px; border-radius: 6px; opacity: 0; pointer-events: none; transition: .2s; }
+  #toast.on { opacity: 1; transform: translate(-50%, 0); }
+  #toast.err { background: #c44; color: #fff; }
+  .btns { display: flex; gap: 8px; }
+  dialog { width: min(760px, 92vw); max-height: 85vh; background: #2a2a2d; color: #ddd; border: 1px solid #555; padding: 16px; }
+  dialog::backdrop { background: #000a; }
+  dialog[open] { display: flex; flex-direction: column; gap: 10px; }
+  #path { flex: 1; }
+  .row2 { display: flex; gap: 8px; }
+  #scan { overflow: auto; flex: 1; }
+  .s { display: flex; gap: 8px; padding: 4px 2px; align-items: center; }
+  .s.bad { opacity: .45; }
+  .s .why { color: #e88; margin-left: auto; font-size: 12px; }
+  .s .st { margin-left: auto; font-size: 12px; }
+  .pv { width: 72px; height: 48px; object-fit: contain; background: #000; flex: none; }
+  img { width: 100%; display: block; aspect-ratio: 3/2; object-fit: cover; background: #000; }
+  #panel { width: 320px; padding: 16px; background: #2a2a2d; display: flex; flex-direction: column; gap: 10px; }
+  label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
+  input, textarea { background: #1b1b1d; color: #ddd; border: 1px solid #555; padding: 6px; font: inherit; }
+  textarea { height: 120px; }
+</style>
+<div id="grid"></div>
+<div id="toast"></div>
+<dialog id="dlg">
+  <div class="row2"><input id="path" placeholder="/path/to/photos"><button id="browse">Browse…</button><button id="go">Scan</button></div>
+  <div id="scan"></div>
+  <div class="row2"><span id="sum" style="flex:1"></span><button id="close">Close</button><button id="run" disabled>Ingest</button></div>
+</dialog>
+<div id="panel">
+  <label><span><input type="checkbox" id="need"> needs attention only</input></span></label>
+  <button id="add">Add photos…</button>
+  <div class="btns"><button id="all">Select all</button><button id="none">Select none</button><button id="del" style="margin-left:auto;color:#f66">Delete</button></div>
+  <div id="count"></div>
+  <label>Month <small>(blank when mixed)</small> <input id="month" type="month"></label>
+  <label>Date <input id="date" type="datetime-local" step="1"></label>
+  <label>Location <input id="location"></label>
+  <label>Film stock <input id="film"></label>
+  <label>Push/pull (stops) <input id="push" type="number" step="0.5"></label>
+  <label>Description <textarea id="description"></textarea></label>
+</div>
+<script>
+let frames = [], sel = new Set(), last = null;
+const $ = id => document.getElementById(id);
+const FIELDS = ['month', 'date', 'location', 'film', 'push', 'description'];
+const needs = f => !f.date || !f.location;
+const shown = () => frames.filter(f => !$('need').checked || needs(f));
+
+async function load() { frames = await (await fetch('/api/frames')).json(); render(); }
+
+function render() {
+  $('grid').replaceChildren(...shown().map(f => {
+    const d = document.createElement('div');
+    d.className = 'f' + (sel.has(f.hash) ? ' sel' : '') + (needs(f) ? ' need' : '');
+    d.innerHTML = `<input type="checkbox" ${sel.has(f.hash) ? 'checked' : ''}><img loading="lazy" src="${f.thumb}">`;
+    d.querySelector('input').onclick = e => {
+      e.stopPropagation();
+      sel.has(f.hash) ? sel.delete(f.hash) : sel.add(f.hash);
+      last = f.hash; render();
+    };
+    d.onclick = e => {
+      const list = shown().map(x => x.hash);
+      if (e.shiftKey && last) {
+        const [a, b] = [list.indexOf(last), list.indexOf(f.hash)].sort((x, y) => x - y);
+        list.slice(a, b + 1).forEach(h => sel.add(h));
+      } else if (e.metaKey || e.ctrlKey) sel.has(f.hash) ? sel.delete(f.hash) : sel.add(f.hash);
+      else { sel = new Set([f.hash]); }
+      last = f.hash; render();
+    };
+    return d;
+  }));
+  const picked = frames.filter(f => sel.has(f.hash)), one = picked.length === 1;
+  $('count').textContent = `${picked.length} selected`;
+  $('del').disabled = !picked.length;
+  for (const k of FIELDS) {
+    const el = $(k), vals = new Set(picked.map(f => (k === 'month' ? f.date?.slice(0, 7) : f[k]) ?? ''));
+    el.disabled = !picked.length || (!one && (k === 'date' || k === 'description'));
+    el.value = vals.size === 1 ? [...vals][0] : '';
+    el.placeholder = vals.size > 1 ? 'mixed' : '';
+  }
+}
+
+for (const k of FIELDS) $(k).onchange = async () => {
+  let v = $(k).value;
+  v = v === '' ? null : k === 'push' ? Number(v) : v;
+  if (k === 'month' && v === null) return toast('Pick a month; clear a date on a single frame instead', true);
+  const hashes = [...sel];
+  const res = await fetch('/api/frames', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hashes, fields: { [k]: v } }) });
+  if (!res.ok) return toast(`Save failed (${res.status})`, true);
+  toast(`Saved ${k} on ${hashes.length} ${hashes.length === 1 ? 'frame' : 'frames'}`);
+  if (k === 'month' || k === 'date') return load(); // month and date change each other, so re-read
+  frames.filter(f => sel.has(f.hash)).forEach(f => f[k] = v);
+  render();
+};
+$('need').onchange = render;
+$('all').onclick = () => { shown().forEach(f => sel.add(f.hash)); render(); };
+$('none').onclick = () => { sel.clear(); render(); };
+
+$('del').onclick = async () => {
+  const hashes = [...sel];
+  if (!confirm(`Permanently delete ${hashes.length} ${hashes.length === 1 ? 'frame' : 'frames'} from the site and the bucket? Originals on your machine are untouched.`)) return;
+  const res = await fetch('/api/frames', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hashes }) });
+  if (!res.ok) return toast(`Delete failed (${res.status})`, true);
+  frames = frames.filter(f => !sel.has(f.hash));
+  sel.clear(); last = null;
+  render();
+  toast(`Deleted ${hashes.length} ${hashes.length === 1 ? 'frame' : 'frames'}`);
+};
+
+let rows = [], scanning = false;
+$('add').onclick = () => $('dlg').showModal();
+$('close').onclick = () => $('dlg').close();
+$('browse').onclick = async () => {
+  const { path } = await (await fetch('/api/browse', { method: 'POST' })).json();
+  if (path) { $('path').value = path; scan(); }
+};
+$('go').onclick = scan;
+$('path').onkeydown = e => { if (e.key === 'Enter') scan(); };
+
+async function scan() {
+  const res = await fetch('/api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folder: $('path').value }) });
+  if (!res.ok) return toast((await res.json()).error ?? 'Scan failed', true);
+  rows = [];
+  let total = 0, buf = '';
+  scanning = true; $('go').disabled = true;
+  const reader = res.body.getReader(), dec = new TextDecoder();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split('\n');
+    buf = lines.pop();
+    for (const line of lines.filter(Boolean)) {
+      const o = JSON.parse(line);
+      if (o.total !== undefined) total = o.total; else rows.push({ ...o, on: o.ok });
+    }
+    renderScan();
+    $('sum').textContent = `Scanning ${rows.length} / ${total}…`;
+  }
+  scanning = false; $('go').disabled = false;
+  renderScan();
+}
+
+function renderScan() {
+  $('scan').replaceChildren(...rows.map(f => {
+    const d = document.createElement('label');
+    d.className = 's' + (f.ok ? '' : ' bad');
+    d.innerHTML = `<input type="checkbox" ${f.on ? 'checked' : ''} ${f.ok && !f.busy ? '' : 'disabled'}>
+      <img class="pv" loading="lazy" src="/api/preview?path=${encodeURIComponent(f.path)}" onerror="this.style.visibility='hidden'">
+      <span></span><small>${f.w ? f.w + '×' + f.h + ' · ' + f.ratio : ''}</small><span class="${f.state ? 'st' : 'why'}"></span>`;
+    d.children[2].textContent = f.name;
+    d.children[4].textContent = f.state ?? f.reason ?? '';
+    d.firstElementChild.onchange = e => { f.on = e.target.checked; updateRun(); };
+    return d;
+  }));
+  updateRun();
+}
+
+function updateRun() {
+  const n = rows.filter(f => f.on && f.ok && !f.done).length;
+  $('run').disabled = !n || running || scanning;
+  $('run').textContent = `Ingest ${n} photo${n === 1 ? '' : 's'}`;
+  if (!scanning) $('sum').textContent = rows.length ? `${rows.filter(f => f.ok && !f.done).length} of ${rows.length} can be ingested` : '';
+}
+
+let running = false;
+$('run').onclick = async () => {
+  running = true;
+  const added = [];
+  for (const f of rows.filter(f => f.on && f.ok && !f.done)) {
+    f.busy = true; f.state = 'ingesting…'; renderScan();
+    const res = await fetch('/api/ingest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: f.path }) });
+    const body = await res.json();
+    f.busy = false;
+    if (res.ok) { f.done = true; f.ok = false; f.state = 'done'; added.push(body.hash); }
+    else f.state = 'failed: ' + body.error;
+    renderScan();
+  }
+  running = false;
+  updateRun();
+  await load();
+  sel = new Set(added); render();   // select what was just added so it can be labelled right away
+  toast(`Ingested ${added.length} photo${added.length === 1 ? '' : 's'}`);
+};
+
+let toastTimer;
+function toast(msg, err) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'on' + (err ? ' err' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = '', 2500);
+}
+load();
+</script>

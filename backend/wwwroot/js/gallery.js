@@ -379,6 +379,20 @@ function setSrc(img, f) {
   img.src = f.full;
 }
 
+// keep Image objects referenced so the fetch isn't cancelled, and decode ahead so the swap is instant
+const preloaded = new Map();
+function preloadAround(i) {
+  for (const n of [i + 1, i - 1, i + 2, i - 2]) {
+    const f = order[n];
+    if (!f || preloaded.has(f.hash)) continue;
+    const img = new Image();
+    setSrc(img, f);
+    img.decode().catch(() => {});
+    preloaded.set(f.hash, img);
+    if (preloaded.size > 12) preloaded.delete(preloaded.keys().next().value); // ponytail: oldest-first cap, not LRU
+  }
+}
+
 function layoutFor(f) {
   const h = parseInt(f.hash.slice(0, 8), 16);
   return f.h > f.w ? ['bottom', 'top'][h % 2] : ['bottom', 'top', 'tl', 'tr', 'bl', 'br'][h % 6];
@@ -396,10 +410,15 @@ function show(i, instant) {
   setImmersive(false);
   const f = order[i];
   pop.dataset.layout = layoutFor(f);
-  popImg.classList.remove('ready');
-  popImg.onload = () => popImg.classList.add('ready');
-  setSrc(popImg, f);
-  if (popImg.complete && popImg.naturalWidth) popImg.classList.add('ready'); // same src as before: no load event
+  // opening fades in from nothing; stepping keeps the old image up until the next one is decoded, so no white flash
+  if (instant) popImg.classList.remove('ready');
+  const next = new Image();
+  setSrc(next, f);
+  next.decode().catch(() => {}).then(() => {
+    if (cur !== i) return; // user already moved on
+    setSrc(popImg, f);
+    popImg.classList.add('ready');
+  });
   popImg.alt = f.description ?? '';
   const meta = [formatDate(f.date), f.location].filter(Boolean).join(' \u00B7 ');
   const film = filmLine(f);
@@ -417,7 +436,7 @@ function show(i, instant) {
   reelBtns.forEach((b, k) => { if (k === i) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current'); });
   const cb = reelBtns[i];
   if (cb) reelStrip.scrollTo({ left: cb.offsetLeft - reelStrip.clientWidth / 2 + cb.offsetWidth / 2, behavior: instant || reduceMotion ? 'auto' : 'smooth' });
-  [order[i - 1], order[i + 1]].forEach(n => { if (n) setSrc(new Image(), n); });
+  preloadAround(i);
   const url = new URL(location.href);
   url.hash = f.hash;
   history.replaceState(null, '', url);

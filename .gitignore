@@ -1,3 +1,10 @@
 .aider*
 backend/obj
 backend/bin
+.env
+mock*
+
+gallery.db
+
+tools/*/bin
+tools/*/obj
