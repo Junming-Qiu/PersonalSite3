@@ -22,21 +22,3 @@
     
     @await Html.PartialAsync("_Footer")
 </div>
-
-@* <script>
-  document.addEventListener('click', function (e) {
-    const btn = e.target.closest('.nav-selection-option[aria-selected]');
-    if (!btn) return;
-
-    const targetId = btn.id;
-    if (!targetId) return;
-    console.log(targetId)
-
-    // Hide all panels
-    document.querySelectorAll('.panel').forEach(el => el.classList.add('hidden'));
-
-    console.log(document.getElementsByClassName("panel"))
-    // Show clicked panel
-    document.getElementsByClassName("panel")[targetId].classList.remove('hidden')
-  });
-</script> *@

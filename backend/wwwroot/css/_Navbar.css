@@ -62,7 +62,7 @@
 
 /* gallery scheme: header and tab bar share one grey */
 .nav-container.scheme-gallery {
-  --nav-head: #cbcbcf;
+  --nav-head: #b7b7ba;
   --nav-bar: #cbcbcf;
-  --nav-hover: #b9b9be;
+  --nav-hover: #99999a;
 }
