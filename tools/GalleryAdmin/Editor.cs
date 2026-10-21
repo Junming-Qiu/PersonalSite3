@@ -11,7 +11,8 @@ static class Editor
     {
         var cdn = Environment.GetEnvironmentVariable("BUCKET_CDN_ENDPOINT")!.TrimEnd('/');
         var app = WebApplication.CreateBuilder(args).Build();
-        app.Urls.Add("http://localhost:5100");
+        var port = Environment.GetEnvironmentVariable("EDITOR_PORT") ?? "5100";
+        app.Urls.Add($"http://localhost:{port}");
         app.UseDefaultFiles();
         app.UseStaticFiles();
 
@@ -153,6 +154,12 @@ static class Editor
             }
         });
 
+        app.MapPost("/api/rotate", async ([Microsoft.AspNetCore.Mvc.FromBody] RotateReq r) =>
+        {
+            try { return Results.Ok(new { hash = await Ingest.Rotate(db, r.Hash, r.Clockwise) }); }
+            catch (Exception ex) { return Results.Json(new { error = ex.Message }, statusCode: 500); }
+        });
+
         app.MapPost("/api/ingest", async ([Microsoft.AspNetCore.Mvc.FromBody] FileReq r) =>
         {
             try { return Results.Ok(new { hash = await Ingest.One(db, r.Path) }); }
@@ -160,11 +167,12 @@ static class Editor
             catch (Exception ex) { return Results.Json(new { error = ex.Message }, statusCode: 500); }
         });
 
-        Console.WriteLine("Editor on http://localhost:5100");
+        Console.WriteLine($"Editor on http://localhost:{port}");
         await app.RunAsync();
     }
 
     record FolderReq(string Folder);
+    record RotateReq(string Hash, bool Clockwise);
     record FileReq(string Path);
     record Delete(string[] Hashes);
     record Patch(string[] Hashes, JsonElement Fields);

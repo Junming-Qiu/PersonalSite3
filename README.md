@@ -35,7 +35,7 @@ Opens at http://localhost:5100.
 
 **Add photos:** click "Add photos…", then Browse… (native macOS folder picker) or type a path, and Scan. Each file is validated; unusable ones are greyed with the reason (not JPEG, unreadable, ratio not 3:2, 4:3 or 1:1 (within 1%), already ingested, duplicate in the folder). Tick the rest and click Ingest. It reads the capture date, strips metadata, makes the three renditions, uploads them, and adds a row to `gallery.db`. Originals never leave your machine. The newly added frames are selected when it finishes, ready to label.
 
-**Label and delete:** click to select, shift-click for a range, cmd/ctrl-click to toggle, or use the checkboxes. Select all / Select none work on the visible frames. Edit date, location, film stock, push/pull and description; edits save when you click off a field and a toast confirms. Date and description are single-frame only. "Needs attention only" shows frames missing a date or location. Delete removes the selected frames from the site and the bucket after a confirmation.
+**Label and delete:** click to select, shift-click for a range, cmd/ctrl-click to toggle, or use the checkboxes. Select all / Select none work on the visible frames. Edit date, location, film stock, push/pull and description; edits save when you click off a field and a toast confirms. Date and description are single-frame only. "Needs attention only" shows frames missing a date or location. Rotate (↺ ↻) turns the selected frames 90° by re-uploading them (they get new ids; labels are kept). Delete removes the selected frames from the site and the bucket after a confirmation.
 
 ### Not built yet
 

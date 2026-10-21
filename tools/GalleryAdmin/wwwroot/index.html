@@ -39,7 +39,7 @@
 <div id="panel">
   <label><span><input type="checkbox" id="need"> needs attention only</input></span></label>
   <button id="add">Add photos…</button>
-  <div class="btns"><button id="all">Select all</button><button id="none">Select none</button><button id="del" style="margin-left:auto;color:#f66">Delete</button></div>
+  <div class="btns"><button id="all">Select all</button><button id="none">Select none</button><button id="rotl" title="Rotate selected 90° counter-clockwise">↺</button><button id="rotr" title="Rotate selected 90° clockwise">↻</button><button id="del" style="margin-left:auto;color:#f66">Delete</button></div>
   <div id="count"></div>
   <label>Month <small>(blank when mixed)</small> <input id="month" type="month"></label>
   <label>Date <input id="date" type="datetime-local" step="1"></label>
@@ -80,7 +80,7 @@ function render() {
   }));
   const picked = frames.filter(f => sel.has(f.hash)), one = picked.length === 1;
   $('count').textContent = `${picked.length} selected`;
-  $('del').disabled = !picked.length;
+  $('del').disabled = $('rotl').disabled = $('rotr').disabled = !picked.length;
   for (const k of FIELDS) {
     const el = $(k), vals = new Set(picked.map(f => (k === 'month' ? f.date?.slice(0, 7) : f[k]) ?? ''));
     el.disabled = !picked.length || (!one && (k === 'date' || k === 'description'));
@@ -104,6 +104,22 @@ for (const k of FIELDS) $(k).onchange = async () => {
 $('need').onchange = render;
 $('all').onclick = () => { shown().forEach(f => sel.add(f.hash)); render(); };
 $('none').onclick = () => { sel.clear(); render(); };
+
+// rotating re-uploads under a new hash, so run one at a time and re-select the results
+for (const [id, clockwise] of [['rotl', false], ['rotr', true]]) $(id).onclick = async () => {
+  const hashes = [...sel];
+  const out = [];
+  for (const [i, hash] of hashes.entries()) {
+    toast(`Rotating ${i + 1} / ${hashes.length}…`);
+    const res = await fetch('/api/rotate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hash, clockwise }) });
+    const body = await res.json();
+    if (!res.ok) { toast(`Rotate failed: ${body.error}`, true); out.push(hash); break; }
+    out.push(body.hash);
+  }
+  await load();
+  sel = new Set(out); render();
+  if (out.length === hashes.length) toast(`Rotated ${hashes.length} ${hashes.length === 1 ? 'frame' : 'frames'}`);
+};
 
 $('del').onclick = async () => {
   const hashes = [...sel];

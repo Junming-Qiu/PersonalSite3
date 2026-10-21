@@ -77,6 +77,45 @@ static class Ingest
         }
     }
 
+    static string Chain(params string[] filters) => string.Join(",", filters.Where(f => f != ""));
+
+    // ffmpeg 4.2 ignores the EXIF orientation flag, so apply it as an explicit filter
+    static string OrientFilter(string file)
+    {
+        var d = ImageMetadataReader.ReadMetadata(file).OfType<ExifIfd0Directory>().FirstOrDefault();
+        return d != null && d.TryGetInt32(ExifDirectoryBase.TagOrientation, out var o)
+            ? o switch { 2 => "hflip", 3 => "hflip,vflip", 4 => "vflip", 5 => "transpose=0", 6 => "transpose=1", 7 => "transpose=3", 8 => "transpose=2", _ => "" }
+            : "";
+    }
+
+    // makes full/med/thumb in tmp from src, applying `pre` (orientation or a manual rotation); metadata dropped, icc + watermark re-added
+    static (string Full, string Med, string Thumb, int W, int H, int MedW) Render(string src, string tmp, string pre)
+    {
+        var full = Path.Combine(tmp, "full.jpg");
+        var med = Path.Combine(tmp, "med.jpg");
+        var thumb = Path.Combine(tmp, "thumb.jpg");
+        Ffmpeg(src, full, pre == "" ? "null" : pre);
+        var (w, h) = Size(full);
+        var scale = Math.Min(1.0, 2400.0 / Math.Max(w, h));
+        var medW = (int)Math.Round(w * scale) / 2 * 2;
+        Ffmpeg(src, med, Chain(pre, $"scale={medW}:-2"));
+        Ffmpeg(src, thumb, Chain(pre, w >= h ? "" : "transpose=1", "scale=720:480:force_original_aspect_ratio=decrease,pad=720:480:(ow-iw)/2:(oh-ih)/2:color=0x1b1b1d"));
+        var icc = IccSegments(src).ToList();
+        foreach (var f in new[] { full, med, thumb }) Tag(f, icc);
+        return (full, med, thumb, w, h, medW);
+    }
+
+    static async Task Upload(AmazonS3Client s3, string bucket, string hash, (string Full, string Med, string Thumb, int W, int H, int MedW) r)
+    {
+        foreach (var (kind, path) in new[] { ("full", r.Full), ("med", r.Med), ("thumb", r.Thumb) })
+            await s3.PutObjectAsync(new PutObjectRequest
+            {
+                BucketName = bucket, Key = $"{kind}/{hash}.jpg", FilePath = path, ContentType = "image/jpeg",
+                CannedACL = S3CannedACL.PublicRead, Headers = { CacheControl = "public, max-age=31536000, immutable" },
+                DisablePayloadSigning = true, DisableDefaultChecksumValidation = true,
+            });
+    }
+
     // returns the new Frame's hash; throws InvalidOperationException with the reason if the file isn't acceptable
     public static async Task<string> One(SqliteConnection db, string file)
     {
@@ -88,39 +127,68 @@ static class Ingest
         try
         {
             var date = ReadDate(file);
-            var full = Path.Combine(tmp, "full.jpg");
-            var med = Path.Combine(tmp, "med.jpg");
-            var thumb = Path.Combine(tmp, "thumb.jpg");
-
-            // ffmpeg drops all metadata; icc profile and watermark are re-added below. ponytail: EXIF orientation ignored (ffmpeg 4.2), add a transpose if a photo ever comes in sideways
-            Ffmpeg(file, full, "null");
-            var (w, h) = Size(full);
-            var scale = Math.Min(1.0, 2400.0 / Math.Max(w, h));
-            var medW = (int)Math.Round(w * scale) / 2 * 2;
-            Ffmpeg(file, med, $"scale={medW}:-2");
-            Ffmpeg(file, thumb, (w >= h ? "" : "transpose=1,") + "scale=720:480:force_original_aspect_ratio=decrease,pad=720:480:(ow-iw)/2:(oh-ih)/2:color=0x1b1b1d");
-            var icc = IccSegments(file).ToList();
-            foreach (var f in new[] { full, med, thumb }) Tag(f, icc);
-
-            foreach (var (kind, path) in new[] { ("full", full), ("med", med), ("thumb", thumb) })
-                await s3.PutObjectAsync(new PutObjectRequest
-                {
-                    BucketName = bucket, Key = $"{kind}/{hash}.jpg", FilePath = path, ContentType = "image/jpeg",
-                    CannedACL = S3CannedACL.PublicRead, Headers = { CacheControl = "public, max-age=31536000, immutable" },
-                    DisablePayloadSigning = true, DisableDefaultChecksumValidation = true,
-                });
+            var r = Render(file, tmp, OrientFilter(file));
+            await Upload(s3, bucket, hash, r);
 
             lock (Lock)
             {
                 using var ins = db.CreateCommand();
                 ins.CommandText = "INSERT INTO frames (hash, width, height, med_width, date) VALUES ($h, $w, $ht, $m, $d)";
                 ins.Parameters.AddWithValue("$h", hash);
-                ins.Parameters.AddWithValue("$w", w);
-                ins.Parameters.AddWithValue("$ht", h);
-                ins.Parameters.AddWithValue("$m", medW);
+                ins.Parameters.AddWithValue("$w", r.W);
+                ins.Parameters.AddWithValue("$ht", r.H);
+                ins.Parameters.AddWithValue("$m", r.MedW);
                 ins.Parameters.AddWithValue("$d", (object?)date ?? DBNull.Value);
                 ins.ExecuteNonQuery();
             }
+            return hash;
+        }
+        finally { System.IO.Directory.Delete(tmp, true); }
+    }
+
+    // rotates a published Frame 90 degrees: re-renders from its full Rendition under a new hash (the CDN caches keys forever),
+    // moves the row's labels across, then deletes the old objects. ponytail: re-encodes the full JPEG once more (small quality loss); the Original isn't kept
+    public static async Task<string> Rotate(SqliteConnection db, string oldHash, bool clockwise)
+    {
+        var (s3, bucket) = Bucket.Open();
+        var tmp = System.IO.Directory.CreateTempSubdirectory().FullName;
+        try
+        {
+            var src = Path.Combine(tmp, "src.jpg");
+            using (var obj = await s3.GetObjectAsync(bucket, $"full/{oldHash}.jpg"))
+                await obj.WriteResponseStreamToFileAsync(src, false, default);
+            var outDir = System.IO.Directory.CreateDirectory(Path.Combine(tmp, "out")).FullName;
+            var r = Render(src, outDir, clockwise ? "transpose=1" : "transpose=2");
+            var hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(r.Full)))[..16].ToLower();
+            await Upload(s3, bucket, hash, r);
+
+            lock (Lock)
+            {
+                using var tx = db.BeginTransaction();
+                using var ins = db.CreateCommand();
+                ins.Transaction = tx;
+                ins.CommandText = """
+                    INSERT INTO frames (hash, width, height, med_width, date, location, film, push, description)
+                    SELECT $new, $w, $h, $m, date, location, film, push, description FROM frames WHERE hash = $old
+                    """;
+                ins.Parameters.AddWithValue("$new", hash);
+                ins.Parameters.AddWithValue("$w", r.W);
+                ins.Parameters.AddWithValue("$h", r.H);
+                ins.Parameters.AddWithValue("$m", r.MedW);
+                ins.Parameters.AddWithValue("$old", oldHash);
+                if (ins.ExecuteNonQuery() != 1) throw new InvalidOperationException("frame not found");
+                using var del = db.CreateCommand();
+                del.Transaction = tx;
+                del.CommandText = "DELETE FROM frames WHERE hash = $old";
+                del.Parameters.AddWithValue("$old", oldHash);
+                del.ExecuteNonQuery();
+                tx.Commit();
+            }
+            await s3.DeleteObjectsAsync(new DeleteObjectsRequest
+            {
+                BucketName = bucket,
+                Objects = new[] { "thumb", "med", "full" }.Select(k => new KeyVersion { Key = $"{k}/{oldHash}.jpg" }).ToList(),
+            });
             return hash;
         }
         finally { System.IO.Directory.Delete(tmp, true); }
